@@ -8,6 +8,7 @@ from transformers import (
     MllamaForConditionalGeneration,
     TextIteratorStreamer,
 )
+from PIL import Image
 
 
 class LlamaVisionAPI(ls.LitAPI):
@@ -21,7 +22,7 @@ class LlamaVisionAPI(ls.LitAPI):
         self.model = MllamaForConditionalGeneration.from_pretrained(
             model_id,
             torch_dtype=torch.bfloat16,
-            device_map="auto",
+            device_map=device,
             quantization_config=quantization_config,
         ).to(device)
         self.processor = AutoProcessor.from_pretrained(model_id)
@@ -37,7 +38,7 @@ class LlamaVisionAPI(ls.LitAPI):
     def decode_request(self, request):
         prompt = request.get("prompt")
         image = request.get("image").file
-
+        image = Image.open(image).convert("RGB")
         messages = [
             {
                 "role": "user",
@@ -59,7 +60,7 @@ class LlamaVisionAPI(ls.LitAPI):
 
     def predict(self, inputs):
         generation_kwargs = dict(
-            inputs=inputs,
+            **inputs,
             streamer=self.streamer,
             eos_token_id=self.processor.tokenizer.eos_token_id,
             temperature=0.7,
@@ -71,8 +72,12 @@ class LlamaVisionAPI(ls.LitAPI):
         for text in self.streamer:
             yield text
 
+    def encode_response(self, outputs):
+        for output in outputs:
+            yield output
+
 
 if __name__ == "__main__":
     api = LlamaVisionAPI()
-    server = ls.LitServer(api, spec=ls.OpenAISpec())
+    server = ls.LitServer(api, api_path="/predict", stream=True)
     server.run(port=8000, generate_client_file=False)
