@@ -13,6 +13,7 @@ The Llama 3.2-Vision collection of multimodal large language models (LLMs) is a 
 - Image reasoning
 - Captioning
 - Answering general questions about an image
+- Tool Calling
 
 ## Installation
 
@@ -20,17 +21,28 @@ To get started with this project, follow these steps:
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/your-repo.git
-    cd your-repo
+    git clone https://github.com/bhimrazy/chat-with-llama-3.2-vision
+    cd chat-with-llama-3.2-vision
     ```
 
 2. Install the required dependencies:
     ```sh
     pip install -r requirements.txt
     ```
+3. Run server
+    ```sh
+    export HF_TOKEN=your_huggingface_token # required for model download
 
+    python server.py
+    ```
 ## Usage
 
+To test using python client, execute the following command:
+# display image and prompt
+```sh
+python client.py --image=cocktail-ingredients.jpg --prompt="W
+hat cocktail can I make with these ingredients?"
+```
 To run the application, execute the following command:
 ```sh
 streamlit run app.py
