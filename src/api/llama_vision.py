@@ -48,7 +48,7 @@ class LlamaVisionAPI(ls.LitAPI):
         }
         context["tool"] = request.tools is not None
 
-        messages, images = parse_messages(request.messages)
+        messages, images = parse_messages(request)
         input_text = self.processor.apply_chat_template(
             messages, add_generation_prompt=True
         )
