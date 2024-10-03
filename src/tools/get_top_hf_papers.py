@@ -7,12 +7,12 @@ CURRENT_DATE = datetime.now().strftime("%Y-%m-%d")
 
 
 def get_top_hf_papers(n: int, date: str = CURRENT_DATE) -> str:
-    """
+    f"""
     Fetches the top N papers from the Hugging Face papers page based on the number of votes.
 
     Args:
     n (int): Number of top papers to fetch.
-    date (str): Date of the papers to fetch. Default is the current date. Format: "YYYY-MM-DD".
+    date (str): The date of the papers to fetch, in the format "YYYY-MM-DD". Defaults to {date}.
     """
     top_papers = []
     try:
@@ -74,7 +74,7 @@ get_top_hf_papers_json = {
                 },
                 "date": {
                     "type": "string",
-                    "description": "Date of the papers to fetch. Default is the current date. Format: 'YYYY-MM-DD'.",
+                    "description": f'The date of the papers to fetch, in the format "YYYY-MM-DD". Defaults to "{CURRENT_DATE}". [Optional]',
                 },
             },
             "required": ["n"],
