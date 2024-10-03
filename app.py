@@ -40,8 +40,11 @@ def main():
         with st.chat_message(message["role"]):
             content = message["content"]
             if isinstance(content, list):
-                st.markdown(content[0]["text"])
-                urls = [item["image_url"]["url"] for item in content[1:]]
+                urls = [
+                    item["image_url"]["url"] for item in content if "image_url" in item
+                ]
+                text = [item["text"] for item in content if "text" in item]
+                st.markdown("\n".join(text))
                 st.image(urls if len(urls) < 3 else urls[0], width=200)
             else:
                 st.markdown(content)
@@ -79,48 +82,50 @@ def main():
                 )
 
             else:
-                st.spinner("Thinking...")
-                response = client.chat.completions.create(
-                    model=MODEL,
-                    messages=messages,
-                    tools=tools,
-                    tool_choice="auto",
-                )
-                response_message = response.choices[0].message
-                tool_calls = response_message.tool_calls
-                if tool_calls:
-                    with st.status("Thinking...", expanded=True) as status:
-                        st.session_state.messages.append(response_message)
-                        for tool_call in tool_calls:
-                            function_name = tool_call.function.name
-                            tool = functions[function_name]
-                            args = json.loads(tool_call.function.arguments)
-                            st.write(f"Calling {function_name}... with args: {args}")
-                            tool_response = tool(**args)
-                            st.session_state.messages.append(
-                                {
-                                    "tool_call_id": tool_call.id,
-                                    "role": "ipython",
-                                    "content": tool_response,
-                                    "name": function_name,
-                                }
-                            )
-                            status.update(
-                                label=f"Running {function_name}... Done!",
-                                state="complete",
-                                expanded=False,
-                            )
-                    stream = client.chat.completions.create(
-                        model=MODEL, messages=st.session_state.messages, stream=True
+                with st.spinner("Thinking..."):
+                    response = client.chat.completions.create(
+                        model=MODEL,
+                        messages=messages,
+                        tools=tools,
+                        tool_choice="auto",
                     )
-                    response = st.write_stream(stream)
-                    st.session_state.messages.append(
-                        {"role": "assistant", "content": response}
-                    )
-                else:
-                    response = response.choices[0].message
-                    st.write(response.content)
-                    st.session_state.messages.append(response)
+                    response_message = response.choices[0].message
+                    tool_calls = response_message.tool_calls
+                    if tool_calls:
+                        with st.status("Thinking...", expanded=True) as status:
+                            st.session_state.messages.append(response_message)
+                            for tool_call in tool_calls:
+                                function_name = tool_call.function.name
+                                tool = functions[function_name]
+                                args = json.loads(tool_call.function.arguments)
+                                st.write(
+                                    f"Calling {function_name}... with args: {args}"
+                                )
+                                tool_response = tool(**args)
+                                st.session_state.messages.append(
+                                    {
+                                        "tool_call_id": tool_call.id,
+                                        "role": "ipython",
+                                        "content": tool_response,
+                                        "name": function_name,
+                                    }
+                                )
+                                status.update(
+                                    label=f"Running {function_name}... Done!",
+                                    state="complete",
+                                    expanded=False,
+                                )
+                        stream = client.chat.completions.create(
+                            model=MODEL, messages=st.session_state.messages, stream=True
+                        )
+                        response = st.write_stream(stream)
+                        st.session_state.messages.append(
+                            {"role": "assistant", "content": response}
+                        )
+                    else:
+                        response = response.choices[0].message
+                        st.write(response.content)
+                        st.session_state.messages.append(response)
 
 
 if __name__ == "__main__":
