@@ -27,7 +27,7 @@ class LlamaVisionAPI(ls.LitAPI):
             model_id,
             torch_dtype=torch.bfloat16,
             device_map=device,
-            quantization_config=quantization_config,
+            # quantization_config=quantization_config,
         ).to(device)
 
         self.processor = AutoProcessor.from_pretrained(model_id)
@@ -52,6 +52,7 @@ class LlamaVisionAPI(ls.LitAPI):
         input_text = self.processor.apply_chat_template(
             messages, add_generation_prompt=True
         )
+        print("INPUT TEXT:", input_text)
         inputs = self.processor(images, input_text, return_tensors="pt").to(self.device)
         return inputs
 
@@ -78,12 +79,8 @@ class LlamaVisionAPI(ls.LitAPI):
             if context.get("tool") and combined_output.startswith(
                 ("{", "[", "<function")
             ):
-                tool_calls = ToolUtils.parse_tool_calls(buffer)
-                if tool_calls:
-                    yield ChatMessage(
-                        role="assistant", content="", tool_calls=tool_calls
-                    )
-                    buffer.clear()
+                tool_calls = ToolUtils.maybe_extract_custom_tool_calls(combined_output)
+                yield ChatMessage(role="assistant", content="", tool_calls=tool_calls)
                 continue
 
             # Handle end-of-sequence (EOS) token
