@@ -41,7 +41,9 @@ def prep_tool_prompt(tools: List[Tool]):
     Prepare system prompt with tools.
     """
 
-    function_definitions = [tool.model_dump(exclude_none=True) for tool in tools]
+    function_definitions = [
+        tool.function.model_dump(exclude_none=True) for tool in tools
+    ]
     system_prompt = """You are an expert in composing functions. You are given a question and a set of possible functions. 
 Based on the question, you will need to make one or more function/tool calls to achieve the purpose. 
 If none of the function can be used, point it out. If the given question lacks the parameters required by the function,
@@ -139,4 +141,7 @@ def parse_messages(request: ChatCompletionRequest):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         images = list(executor.map(process_image, images))
 
-    return messages, images
+    # Prompting with images is incompatible with system messages.
+    if images and messages[0]["role"] == "system":
+        messages[0]["role"] = "user"
+    return messages, images or None
