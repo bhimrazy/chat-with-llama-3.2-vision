@@ -1,4 +1,7 @@
 accelerate
 bitsandbytes
 litserve
+openai
+Pillow
+streamlit
 transformers
