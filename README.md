@@ -41,7 +41,7 @@ To test using python client, execute the following command:
 # display image and prompt
 <div style="text-align: center;">
     <img src="cocktail-ingredients.jpg" height="120" width="auto"><br>
-    <i>What cocktail can I make with these ingredients</i>
+    <i>What cocktail can I make with these ingredients?</i>
 </div>
 
 ```sh
