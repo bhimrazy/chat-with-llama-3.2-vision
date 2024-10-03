@@ -1,6 +1,6 @@
 # Chat with Llama 3.2-Vision (11B) Multimodal LLM
 <div align="center">
-<img src="https://github.com/user-attachments/assets/645d4447-eb8a-4992-9c53-8c37e904e82f" style="display: block; margin-left: auto; margin-right: auto; border-radius: 50%; width: 96px; height: 96px; object-fit: cover; ">
+<img src="https://github.com/user-attachments/assets/645d4447-eb8a-4992-9c53-8c37e904e82f" style="display: block; margin-left: auto; margin-right: auto; border-radius: 50%; width: 128px; height: 128px; object-fit: cover; ">
 </div>
 
 ## Overview
