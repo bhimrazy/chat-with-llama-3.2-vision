@@ -39,8 +39,8 @@ To get started with this project, follow these steps:
 
 To test using python client, execute the following command:
 
-<div style="text-align: center;">
-    <img src="cocktail-ingredients.jpg" height="120" width="auto"><br>
+<div align="center">
+    <img src="cocktail-ingredients.jpg" height="200" width="auto"><br>
     <i>What cocktail can I make with these ingredients?</i>
 </div>
 
