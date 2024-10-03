@@ -29,13 +29,17 @@ To get started with this project, follow these steps:
     ```sh
     pip install -r requirements.txt
     ```
-3. Run server
+
+## Usage
+
+1. Run server
     ```sh
     export HF_TOKEN=your_huggingface_token # required for model download
 
     python server.py
     ```
-## Usage
+
+2. Run client/app
 
 To test using python client, execute the following command:
 
