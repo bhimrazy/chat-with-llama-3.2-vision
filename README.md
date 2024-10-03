@@ -41,7 +41,7 @@ To get started with this project, follow these steps:
 
 2. Run client/app
 
-To test using python client, execute the following command:
+    To test using python client, execute the following command:
 
 <div align="center">
     <img src="cocktail-ingredients.jpg" height="200" width="auto"><br>
