@@ -38,15 +38,15 @@ To get started with this project, follow these steps:
 ## Usage
 
 To test using python client, execute the following command:
-# display image and prompt
+
 <div style="text-align: center;">
     <img src="cocktail-ingredients.jpg" height="120" width="auto"><br>
     <i>What cocktail can I make with these ingredients?</i>
 </div>
 
+
 ```sh
-python client.py --image=cocktail-ingredients.jpg --prompt="W
-hat cocktail can I make with these ingredients?"
+python client.py --image=cocktail-ingredients.jpg --prompt="What cocktail can I make with these ingredients?"
 ```
 To run the application, execute the following command:
 ```sh
