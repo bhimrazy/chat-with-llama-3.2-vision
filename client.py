@@ -1,22 +1,28 @@
 import argparse
-import requests
-
-# Update this URL to your server's URL if hosted remotely
-API_URL = "http://127.0.0.1:8000/predict"
+from src.api import client
+from src.ui.utils import encode_image
+from src.config import MODEL
 
 
 def send_generate_request(image_path, prompt):
-    with open(image_path, "rb") as f:
-        image_file = f.read()
-
-    files = {"image": (image_path, image_file, "image/jpeg")}
-    response = requests.post(API_URL, data={"prompt": prompt}, files=files, stream=True)
-    if response.status_code == 200:
-        for line in response.iter_lines():
-            print(f"\033[92m{line.decode('utf-8')}\033[0m")
-    else:
+    encoded_image_object = encode_image(image_path)
+    stream = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    encoded_image_object,
+                    {"type": "text", "text": prompt},
+                ],
+            }
+        ],
+        max_tokens=512,
+        stream=True,
+    )
+    for chunk in stream:
         print(
-            f"Error: Response with status code {response.status_code} - {response.text}"
+            f"\033[92m{chunk.choices[0].delta.content or ''}\033[0m", end="", flush=True
         )
 
 
