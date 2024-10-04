@@ -1,10 +1,11 @@
 # Adapted from https://github.com/meta-llama/llama-models/blob/main/models/llama3/api/tool_utils.py
-import re
 import ast
 import json
-import string
+import re
 import secrets
-from typing import Optional, Tuple
+import string
+from typing import List, Union
+from litserve.specs.openai import ToolCall
 
 CUSTOM_TOOL_CALL_PATTERN = re.compile(
     r"<function=(?P<function_name>[^}]+)>(?P<args>{.*?})"
@@ -92,7 +93,7 @@ def parse_python_list_for_function_calls(input_string):
     # Iterate through each function call in the list
     for node in tree.body[0].value.elts:
         if isinstance(node, ast.Call):
-            function_name = node.func.id
+            function_name = node.func.id if isinstance(node.func, ast.Name) else None
             function_args = {}
 
             # Extract keyword arguments
@@ -124,7 +125,9 @@ def prepare_tool(tool_name: str, args: dict):
 
 class ToolUtils:
     @staticmethod
-    def maybe_extract_custom_tool_calls(message_body: str) -> Optional[Tuple[str, str]]:
+    def maybe_extract_custom_tool_calls(
+        message_body: str,
+    ) -> Union[List[ToolCall], None]:
         # {"type": "function", "name": "function_name", "parameters": {...}
         # <function=example_function_name>{"example_name": "example_value"}</function>
         # [func_name1(params_name1='params_value1', params_name2='params_value2'), func_name2(params)]

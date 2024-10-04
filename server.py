@@ -24,12 +24,6 @@ def generate_metrics_dir():
     return metrics_dir
 
 
-# def make_metrics_app():
-#     generate_metrics_dir()
-#     registry = CollectorRegistry()
-#     return make_asgi_app(registry=registry)
-
-
 class PrometheusLogger(ls.Logger):
     def __init__(self):
         super().__init__()
@@ -42,14 +36,11 @@ class PrometheusLogger(ls.Logger):
         if key == "input_text":
             print(f"Input text: {value}")
 
-        # if key == "output_text":
-        #     print(value, end="", flush=True)
+        if key == "output_text":
+            print(value, end="", flush=True)
 
-        if key == "prediction_time":
-            print(f"Prediction time: {value:.3f} seconds")
-
-        if key == "inference_speed":
-            print(f"Inference speed: {value:.3f} seconds")
+        if key == "inference_time":
+            print(f"Inference time: {value:.3f} seconds")
 
 
 class InferenceSpeedLogger(ls.Callback):
@@ -60,21 +51,11 @@ class InferenceSpeedLogger(ls.Callback):
     def on_after_predict(self, lit_api):
         t1 = time.perf_counter()
         elapsed = t1 - self._start_time
-        lit_api.log("prediction_time", elapsed)
-
-    def on_before_encode_response(self, lit_api):
-        t0 = time.perf_counter()
-        self._start_time = t0
-
-    def on_after_encode_response(self, lit_api):
-        t1 = time.perf_counter()
-        elapsed = t1 - self._start_time
-        lit_api.log("inference_speed", elapsed)
+        lit_api.log("inference_time", elapsed)
 
 
 if __name__ == "__main__":
     api = LlamaVisionAPI()
-    # prometheus_logger.mount("/metrics", make_metrics_app())
 
     server = ls.LitServer(
         api,
@@ -83,5 +64,4 @@ if __name__ == "__main__":
         callbacks=[InferenceSpeedLogger()],
         loggers=PrometheusLogger(),
     )
-    # server.app.mount("/metrics", make_metrics_app())
     server.run(port=8000, generate_client_file=False)
