@@ -3,5 +3,6 @@ bitsandbytes
 litserve
 openai
 Pillow
+prometheus-client
 streamlit
 transformers
