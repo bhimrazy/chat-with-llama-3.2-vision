@@ -110,7 +110,7 @@ def advanced_settings():
             if tool["function"]["name"] in selected_tools
         ]
 
-    json_mode = st.sidebar.toggle("JSON mode")
+    json_mode = st.sidebar.toggle("JSON mode (Experimental)")
     if json_mode:
         st.sidebar.markdown(
             "[Guide on Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs/introduction)"

@@ -37,17 +37,21 @@ def main():
     # Display chat messages from history on app rerun
     for message in st.session_state.messages:
         # Display chat message in chat message container
-        with st.chat_message(message["role"]):
-            content = message["content"]
-            if isinstance(content, list):
-                urls = [
-                    item["image_url"]["url"] for item in content if "image_url" in item
-                ]
-                text = [item["text"] for item in content if "text" in item]
-                st.markdown("\n".join(text))
-                st.image(urls if len(urls) < 3 else urls[0], width=200)
-            else:
-                st.markdown(content)
+        role = message["role"]
+        if role in ["user", "assistant"]:
+            with st.chat_message(role):
+                content = message["content"]
+                if isinstance(content, list):
+                    urls = [
+                        item["image_url"]["url"]
+                        for item in content
+                        if "image_url" in item
+                    ]
+                    text = [item["text"] for item in content if "text" in item]
+                    st.markdown("\n".join(text))
+                    st.image(urls if len(urls) < 3 else urls[0], width=200)
+                else:
+                    st.markdown(content)
 
     if prompt := st.chat_input("Ask something", key="prompt"):
         # Display user message in chat message container
@@ -93,7 +97,6 @@ def main():
                     tool_calls = response_message.tool_calls
                     if tool_calls:
                         with st.status("Thinking...", expanded=True) as status:
-                            st.session_state.messages.append(response_message)
                             for tool_call in tool_calls:
                                 function_name = tool_call.function.name
                                 tool = functions[function_name]
@@ -102,6 +105,7 @@ def main():
                                     f"Calling {function_name}... with args: {args}"
                                 )
                                 tool_response = tool(**args)
+                                st.write(f"Tool Response: {tool_response}")
                                 st.session_state.messages.append(
                                     {
                                         "tool_call_id": tool_call.id,
@@ -123,9 +127,10 @@ def main():
                             {"role": "assistant", "content": response}
                         )
                     else:
-                        response = response.choices[0].message
-                        st.write(response.content)
-                        st.session_state.messages.append(response)
+                        st.write(response_message.content)
+                        st.session_state.messages.append(
+                            {"role": "assistant", "content": response_message.content}
+                        )
 
 
 if __name__ == "__main__":

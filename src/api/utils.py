@@ -56,6 +56,7 @@ also point it out. You should only return the function call in tools call sectio
 
 If you decide to invoke any of the function(s), you MUST put it in the format of [func_name1(params_name1=params_value1, params_name2=params_value2...), func_name2(params)]\n
 MAKE SURE the function call is in the correct format along with the correct/valid parameters.
+ALWAYS USE the exact function name with the correct parameters and values with correct data types.
 You SHOULD NOT include any other text in the response.
 
 Here is a list of functions in JSON format that you can invoke.\n\n{functions}\n""".format(
@@ -74,16 +75,13 @@ def prep_schema_prompt(
     response format prompt adapted from : https://github.com/SylphAI-Inc/AdalFlow
     """
     response_format_str = ""
-    response_format = (
-        response_format.model_dump(exclude_none=True, by_alias=True)
-        if isinstance(response_format, ResponseFormat)
-        else response_format
-    )
-    schema = response_format.get("json_schema", None)
+    response_format = response_format.model_dump(exclude_none=True, by_alias=True)
+    schema = response_format.get("json_schema", None).get("schema", None)
 
     if schema:
         response_format_str = (
-            "<RESPONSE_FORMAT>\n"
+            "<response_format>\n"
+            "You are an expert at structured data extraction."
             "Your output should be formatted as a standard JSON instance with the following schema:\n"
             "```\n"
             f"{json.dumps(schema, indent=4)}\n"
@@ -100,18 +98,18 @@ def prep_schema_prompt(
             "- Do validate your JSON output for syntax correctness and adherence to the schema before submission.\n"
             "- Strictly adhere to the schema provided above.\n"
             "- Return the markdown JSON object as the output without any additional text or comments.\n"
-            "</RESPONSE_FORMAT>"
+            "</response_format>"
         )
     else:
         response_format_str = (
-            "<RESPONSE_FORMAT>\n"
+            "<response_format>\n"
             "Your output should be formatted as a standard JSON instance.\n"
             "- Always enclose the JSON output in triple backticks (```).\n"
             "- Ensure that only valid JSON output is included, without any additional text or formatting.\n"
             "- Use double quotes for the keys and string values.\n"
             '- DO NOT mistake the "properties" and "type" in the schema as the actual fields in the JSON output.\n'
             "- Follow the JSON formatting conventions.\n"
-            "</RESPONSE_FORMAT>"
+            "</response_format>"
         )
     return f"{system_prompt}\n\n{response_format_str}"
 
@@ -137,19 +135,14 @@ def process_content(
     """
     Process the content of a message based on its type and other conditions.
     """
-    if message.role == "system" and tools:
-        content = prep_tool_prompt(tools)
-
-    if last_user_message and response_format and isinstance(content, str):
-        content = prep_schema_prompt(content, response_format)
+    if message.role == "system":
+        if tools:
+            content = prep_tool_prompt(tools)
+        if response_format:
+            content = prep_schema_prompt(content, response_format)
 
     if isinstance(content, list):
         content = process_content_list(content, images)
-
-        if last_user_message and response_format:
-            content.append(
-                {"type": "text", "text": prep_schema_prompt("", response_format)}
-            )
 
     return content
 
@@ -180,8 +173,6 @@ def parse_messages(request: ChatCompletionRequest):
     images = []
     response_format = request.response_format
     tools = request.tools
-
-    total_messages = len(request.messages)
     total_messages = len(request.messages)
     for i, message in enumerate(request.messages):
         last_user_message = i == total_messages - 1 and message.role == "user"
@@ -195,5 +186,7 @@ def parse_messages(request: ChatCompletionRequest):
 
     # Prompting with images is incompatible with system messages.
     if images and messages[0]["role"] == "system":
-        messages = messages[1:]
+        # update the role to user
+        messages[0]["role"] = "user"
+
     return messages, images or None

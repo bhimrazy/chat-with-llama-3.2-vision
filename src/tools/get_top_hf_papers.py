@@ -74,7 +74,7 @@ get_top_hf_papers_json = {
                 },
                 "date": {
                     "type": "string",
-                    "description": f'The date of the papers to fetch, in the format "YYYY-MM-DD". Defaults to "{CURRENT_DATE}". [Optional]',
+                    "description": f'[Optional] Defaults to current date:"{CURRENT_DATE}". The date of the papers to fetch, in the format "YYYY-MM-DD".',
                 },
             },
             "required": ["n"],
