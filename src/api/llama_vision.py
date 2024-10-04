@@ -12,7 +12,7 @@ from transformers import (
 
 from src.api.utils import parse_messages
 from src.config import MODEL
-from src.tools import ToolUtils
+from src.tools.tool_utils import ToolUtils
 
 
 class LlamaVisionAPI(ls.LitAPI):

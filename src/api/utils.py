@@ -5,9 +5,14 @@ import re
 from io import BytesIO
 
 import requests
-from litserve.specs.openai import ChatCompletionRequest, ResponseFormat, Tool
+from litserve.specs.openai import (
+    ChatCompletionRequest,
+    ResponseFormat,
+    Tool,
+    ChatMessage,
+)
 from PIL import Image
-from typing import List
+from typing import List, Union, Dict
 
 
 def read_image(source):
@@ -60,14 +65,20 @@ Here is a list of functions in JSON format that you can invoke.\n\n{functions}\n
     return system_prompt
 
 
-def prep_schema_prompt(system_prompt: str, response_format: ResponseFormat):
+def prep_schema_prompt(
+    system_prompt: str, response_format: Union[ResponseFormat, Dict]
+):
     """
     Prepare system prompt with response format.
 
     response format prompt adapted from : https://github.com/SylphAI-Inc/AdalFlow
     """
     response_format_str = ""
-    response_format = response_format.model_dump(exclude_none=True, by_alias=True)
+    response_format = (
+        response_format.model_dump(exclude_none=True, by_alias=True)
+        if isinstance(response_format, ResponseFormat)
+        else response_format
+    )
     schema = response_format.get("json_schema", None)
 
     if schema:
@@ -77,7 +88,8 @@ def prep_schema_prompt(system_prompt: str, response_format: ResponseFormat):
             "```\n"
             f"{json.dumps(schema, indent=4)}\n"
             "```\n"
-            "- Make sure to always enclose the JSON output in triple backticks (```). Please do not add anything other than valid JSON output!\n"
+            "- Always enclose the JSON output in triple backticks (```).\n"
+            "- Ensure that only valid JSON output is included, without any additional text or formatting.\n"
             "- Use double quotes for the keys and string values.\n"
             '- DO NOT mistake the "properties" and "type" in the schema as the actual fields in the JSON output.\n'
             "- DO NOT include any additional text, comments, or annotations outside of the JSON object.\n"
@@ -94,13 +106,70 @@ def prep_schema_prompt(system_prompt: str, response_format: ResponseFormat):
         response_format_str = (
             "<RESPONSE_FORMAT>\n"
             "Your output should be formatted as a standard JSON instance.\n"
-            "- Make sure to always enclose the JSON output in triple backticks (```). Please do not add anything other than valid JSON output!\n"
+            "- Always enclose the JSON output in triple backticks (```).\n"
+            "- Ensure that only valid JSON output is included, without any additional text or formatting.\n"
             "- Use double quotes for the keys and string values.\n"
             '- DO NOT mistake the "properties" and "type" in the schema as the actual fields in the JSON output.\n'
             "- Follow the JSON formatting conventions.\n"
             "</RESPONSE_FORMAT>"
         )
     return f"{system_prompt}\n\n{response_format_str}"
+
+
+def process_image(image_url: str) -> Image:  # type: ignore
+    """
+    Process an image: read and resize if its height is greater than 720.
+    """
+    image = read_image(image_url)
+    if image and image.height > 720:
+        image = image.resize((int(image.width * 720 / image.height), 720))
+    return image  # type: ignore
+
+
+def process_content(
+    content: Union[str, List],
+    message: ChatMessage,
+    tools: List[Tool] | None,
+    images: List,
+    response_format: ResponseFormat | None,
+    last_user_message: bool,
+) -> Union[str, List[Dict]]:
+    """
+    Process the content of a message based on its type and other conditions.
+    """
+    if message.role == "system" and tools:
+        content = prep_tool_prompt(tools)
+
+    if last_user_message and response_format and isinstance(content, str):
+        content = prep_schema_prompt(content, response_format)
+
+    if isinstance(content, list):
+        content = process_content_list(content, images)
+
+        if last_user_message and response_format:
+            content.append(
+                {"type": "text", "text": prep_schema_prompt("", response_format)}
+            )
+
+    return content
+
+
+def process_content_list(
+    content_list: List,
+    images: List,
+) -> List[Dict]:
+    """
+    Process a list of content items.
+    """
+    content = []
+    for content_item in content_list:
+        if content_item.type == "image_url":
+            url = content_item.image_url.url
+            images.append(url)
+            content.append({"type": "image"})
+        elif content_item.type == "text":
+            content.append({"type": "text", "text": content_item.text})
+    return content
 
 
 def parse_messages(request: ChatCompletionRequest):
@@ -112,37 +181,19 @@ def parse_messages(request: ChatCompletionRequest):
     response_format = request.response_format
     tools = request.tools
 
-    for message in request.messages:
-        content = message.content
-        if message.role == "system":
-            if tools:
-                content = prep_tool_prompt(tools)
-            if response_format:
-                content = prep_schema_prompt(content, response_format)
-
-        if isinstance(content, list):
-            content = []
-            for content_item in message.content:
-                if content_item.type == "image_url":
-                    url = content_item.image_url.url
-                    images.append(url)
-                    content.append({"type": "image"})
-                elif content_item.type == "text":
-                    content.append({"type": "text", "text": content_item.text})
-
+    total_messages = len(request.messages)
+    total_messages = len(request.messages)
+    for i, message in enumerate(request.messages):
+        last_user_message = i == total_messages - 1 and message.role == "user"
+        content = process_content(
+            message.content, message, tools, images, response_format, last_user_message
+        )
         messages.append({"role": message.role, "content": content})
-
-    def process_image(image_url):
-        image = read_image(image_url)
-        # resize if height is greater than 720
-        if image.height > 720:
-            image = image.resize((int(image.width * 720 / image.height), 720))
-        return image
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         images = list(executor.map(process_image, images))
 
     # Prompting with images is incompatible with system messages.
     if images and messages[0]["role"] == "system":
-        messages[0]["role"] = "user"
+        messages = messages[1:]
     return messages, images or None
