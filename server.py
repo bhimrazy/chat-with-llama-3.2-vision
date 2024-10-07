@@ -1,13 +1,12 @@
 import time
-
 import litserve as ls
-
 from src.api.llama_vision import LlamaVisionAPI
 
 
-class Logger(ls.Logger):
+class ResponseLogger(ls.Logger):
     def __init__(self):
         super().__init__()
+        # TODO: setup prometheus client
 
     def process(self, key, value):
         if key == "input_text":
@@ -20,7 +19,7 @@ class Logger(ls.Logger):
             print(f"Inference time: {value:.3f} seconds")
 
 
-class InferenceTimeLogger(ls.Callback):
+class PredictionTimeMonitor(ls.Callback):
     def on_before_predict(self, lit_api):
         t0 = time.perf_counter()
         self._start_time = t0
@@ -37,8 +36,8 @@ if __name__ == "__main__":
     server = ls.LitServer(
         api,
         spec=ls.OpenAISpec(),
-        callbacks=[InferenceTimeLogger()],
-        loggers=Logger(),
+        callbacks=[PredictionTimeMonitor()],
+        loggers=ResponseLogger(),
         timeout=60,
     )
     server.run(port=8000, generate_client_file=False)
