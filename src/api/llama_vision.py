@@ -27,7 +27,7 @@ class LlamaVisionAPI(ls.LitAPI):
             model_id,
             torch_dtype=torch.bfloat16,
             device_map=device,
-            # quantization_config=quantization_config,
+            quantization_config=quantization_config,
         ).to(device)
 
         self.processor = AutoProcessor.from_pretrained(model_id)
