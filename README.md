@@ -1,7 +1,11 @@
 # Chat with Llama 3.2-Vision (11B) Multimodal LLM
 <div align="center">
-<img src="https://github.com/user-attachments/assets/645d4447-eb8a-4992-9c53-8c37e904e82f" style="display: block; margin-left: auto; margin-right: auto; border-radius: 50%; width: 128px; height: 128px; object-fit: cover; ">
+<img src="https://github.com/user-attachments/assets/645d4447-eb8a-4992-9c53-8c37e904e82f" style="display: block; margin-left: auto; margin-right: auto; border-radius: 50%; width: 128px; height: 128px; object-fit: cover; "><br/><br/>
+<a target="_blank" href="https://lightning.ai/bhimrajyadav/studios/deploy-and-chat-with-llama-3-2-vision-multimodal-llm-using-litserve-lightning-fast-inference-engine">
+  <img src="https://pl-bolts-doc-images.s3.us-east-2.amazonaws.com/app-2/studio-badge.svg" alt="Open In Studio"/>
+</a> 
 </div>
+
 
 ## Overview
 
