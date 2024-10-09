@@ -4,5 +4,5 @@ litserve
 openai
 Pillow
 prometheus-client
-streamlit
+streamlit==1.39.0
 transformers
